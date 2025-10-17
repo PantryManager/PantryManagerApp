@@ -1,3 +1,6 @@
+import AuthCheck from '@/components/custom/AuthCheck'
+import { SignInButton, SignOutButton } from '@/components/custom/buttons'
+
 export default function Home() {
     return (
         <div className="min-h-screen p-8">
@@ -6,6 +9,10 @@ export default function Home() {
                 <p className="text-lg">
                     Welcome to your pantry management app.
                 </p>
+                <SignInButton />
+                <AuthCheck>
+                    <SignOutButton />
+                </AuthCheck>
             </main>
         </div>
     )
