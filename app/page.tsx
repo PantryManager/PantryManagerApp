@@ -1,5 +1,6 @@
 import AuthCheck from '@/components/custom/AuthCheck'
 import { SignInButton, SignOutButton } from '@/components/custom/buttons'
+import { PrismaClient } from '@/lib/generated/prisma'
 
 export default function Home() {
     return (
