@@ -60,8 +60,8 @@ GITHUB_SECRET="..."
 Generate the Prisma client and run database migrations:
 
 ```bash
+npx prisma migrate <migration-name>
 npx prisma generate
-npx prisma db push
 ```
 
 To view and manage your database with Prisma Studio:
