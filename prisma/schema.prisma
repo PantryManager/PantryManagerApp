@@ -51,8 +51,11 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
   accounts      Account[]
   sessions      Session[]
+  userFoodItems UserFoodItem[]
 }
 
 model VerificationToken {
@@ -61,4 +64,47 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Unit {
+  id            String         @id @default(uuid())
+  shortName     String         @unique
+  displayName   String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userFoodItems UserFoodItem[]
+}
+
+model FoodItem {
+  id              String          @id @default(uuid())
+  name            String
+  fdcId           Int?            @unique
+  category        String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  userFoodItems   UserFoodItem[]
+
+  @@index([category])
+  @@index([fdcId])
+}
+
+model UserFoodItem {
+  id                       String    @id @default(uuid())
+  userId                   String
+  foodItemId               String
+  unitId                   String
+  quantity                 Float     @default(1)
+  purchaseDate             DateTime
+  estimatedExpirationDate  DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodItem  FoodItem  @relation(fields: [foodItemId], references: [id], onDelete: Cascade)
+  unit      Unit      @relation(fields: [unitId], references: [id])
+
+  @@index([userId])
+  @@index([foodItemId])
+  @@index([estimatedExpirationDate])
 }
