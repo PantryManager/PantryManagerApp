@@ -1,4 +1,4 @@
-// app/components/GeminiCaller.tsx
+// /components/gemini/GeminiCaller.tsx
 'use client'
 
 import { useState } from 'react';
@@ -14,7 +14,7 @@ export default function GeminiCaller() {
     
     try {
       // 1. Send the request to your secure API Route
-      const response = await fetch('/api/generate', {
+      const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),

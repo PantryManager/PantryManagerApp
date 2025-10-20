@@ -1,4 +1,4 @@
-// app/api/generate/route.ts
+// app/api/gemini/route.ts
 
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
