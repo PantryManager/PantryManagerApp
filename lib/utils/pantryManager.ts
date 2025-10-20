@@ -1,0 +1,1 @@
+// stub for pantry management logic
