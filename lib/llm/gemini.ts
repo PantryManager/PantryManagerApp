@@ -67,3 +67,48 @@ export async function getFoodLifespan(foodName: string) {
     };
   }
 }
+
+/**
+ * Generates a recipe based on the provided ingredients.
+ * @param ingredients - An array of ingredient objects, each containing fcdId, name, quantity, and unit.
+ * @returns An object containing the recipe text and a JSON array of used ingredients.
+ */
+export async function generateRecipe(ingredients: { fcdId: number; name: string; quantity: number; unit: string }[]) {
+  const ingredientList = ingredients
+    .map((ingredient) => `${ingredient.quantity} ${ingredient.unit} of ${ingredient.name}`)
+    .join(", ");
+
+  const prompt = `
+    Create a recipe using some or all of the following ingredients: ${ingredientList}.
+    The recipe should include a title, a list of steps, and a list of ingredients used.
+    Return the result as a JSON object with the keys "title", "steps", and "usedIngredients".
+    The "usedIngredients" key should be an array of objects, each containing "fcdId", "name", "quantity", and "unit".
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const text = response.text;
+
+    // Clean the response to extract only the JSON part
+    const jsonString = text
+      ? text.replace(/```json\n/g, "").replace(/\n```/g, "").trim()
+      : "";
+
+    const parsed = JSON.parse(jsonString);
+
+    return {
+      recipeText: `Title: ${parsed.title}\nSteps:\n${parsed.steps.join("\n")}`,
+      usedIngredients: parsed.usedIngredients || [],
+    };
+  } catch (error) {
+    console.error("Error generating recipe:", error);
+    return {
+      recipeText: "Error generating recipe.",
+      usedIngredients: [],
+    };
+  }
+}
