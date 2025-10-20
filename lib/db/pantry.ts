@@ -1,5 +1,4 @@
-import { PrismaClient } from '../generated/prisma'
-export const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma';
 
 export async function getPantryItems(userId: string) {
   return prisma.FoodItem.findMany({
