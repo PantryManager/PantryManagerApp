@@ -56,29 +56,67 @@ export async function getFoodLifespan(foodName: string): Promise<FoodLifespan | 
 
 /**
  * Generates a recipe based on the provided ingredients.
- * @param ingredients - An array of ingredient objects, each containing fcdId, name, quantity, and unit.
- * @returns An object containing the recipe text and a JSON array of used ingredients.
+ * @param ingredients - An array of ingredient objects, each containing userFoodItemId, fdcId, name, quantity, and unit.
+ * @returns A GeneratedRecipe object with title, steps, and usedIngredients.
  */
 export async function generateRecipe(
     ingredients: {
-        fcdId: number
+        userFoodItemId: string
+        fdcId: number
         name: string
         quantity: number
         unit: string
     }[]
-) {
+): Promise<{
+    title: string
+    description?: string
+    servings?: number
+    prepTime?: string
+    cookTime?: string
+    steps: string[]
+    usedIngredients: {
+        userFoodItemId: string
+        fdcId: number
+        name: string
+        quantityUsed: number
+        unit: string
+    }[]
+}> {
     const ingredientList = ingredients
         .map(
             (ingredient) =>
-                `${ingredient.quantity} ${ingredient.unit} of ${ingredient.name}`
+                `${ingredient.quantity} ${ingredient.unit} of ${ingredient.name} (ID: ${ingredient.userFoodItemId})`
         )
         .join(', ')
 
     const prompt = `
-    Create a recipe using some or all of the following ingredients: ${ingredientList}.
-    The recipe should include a title, a list of steps, and a list of ingredients used.
-    Return the result as a JSON object with the keys "title", "steps", and "usedIngredients".
-    The "usedIngredients" key should be an array of objects, each containing "fcdId", "name", "quantity", and "unit".
+    Create a delicious recipe using some or all of the following ingredients: ${ingredientList}.
+
+    IMPORTANT: The ingredients are listed in priority order, with items expiring soonest listed first.
+    Try to use as many of the early ingredients as possible.
+
+    Return the result as a JSON object with the following structure:
+    {
+      "title": "Recipe Name",
+      "description": "Brief description of the dish",
+      "servings": 4,
+      "prepTime": "15 minutes",
+      "cookTime": "30 minutes",
+      "steps": ["Step 1", "Step 2", ...],
+      "usedIngredients": [
+        {
+          "userFoodItemId": "the exact ID from the ingredient list",
+          "fdcId": 123456,
+          "name": "ingredient name",
+          "quantityUsed": 2.5,
+          "unit": "cups"
+        }
+      ]
+    }
+
+    Make sure to include the EXACT userFoodItemId from the ingredient list for each used ingredient.
+    Only include ingredients you actually use in the recipe.
+    Provide only the JSON object in your response, without any additional text.
   `
 
     try {
@@ -99,14 +137,18 @@ export async function generateRecipe(
         const parsed = JSON.parse(jsonString)
 
         return {
-            recipeText: `Title: ${parsed.title}\nSteps:\n${parsed.steps.join('\n')}`,
-            usedIngredients: parsed.usedIngredients || [],
+            title: parsed.title || 'Untitled Recipe',
+            description: parsed.description,
+            servings: parsed.servings,
+            prepTime: parsed.prepTime,
+            cookTime: parsed.cookTime,
+            steps: Array.isArray(parsed.steps) ? parsed.steps : [],
+            usedIngredients: Array.isArray(parsed.usedIngredients)
+                ? parsed.usedIngredients
+                : [],
         }
     } catch (error) {
         console.error('Error generating recipe:', error)
-        return {
-            recipeText: 'Error generating recipe.',
-            usedIngredients: [],
-        }
+        throw new Error('Failed to generate recipe')
     }
 }

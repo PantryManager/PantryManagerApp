@@ -76,3 +76,46 @@ export interface UpdatePantryItemRequest {
     purchaseDate?: string
     estimatedExpirationDate?: string | null
 }
+
+// ============================================
+// Recipe Generation Types
+// ============================================
+
+export interface RecipeIngredient {
+    userFoodItemId: string // Reference to the pantry item
+    fdcId: number
+    name: string
+    quantity: number
+    unit: string
+}
+
+export interface UsedIngredient {
+    userFoodItemId: string // Reference to the pantry item
+    fdcId: number
+    name: string
+    quantityUsed: number
+    unit: string
+}
+
+export interface GeneratedRecipe {
+    title: string
+    description?: string
+    servings?: number
+    prepTime?: string
+    cookTime?: string
+    steps: string[]
+    usedIngredients: UsedIngredient[]
+}
+
+export interface GenerateRecipeRequest {
+    ingredients: RecipeIngredient[]
+}
+
+export interface GenerateRecipeResponse {
+    recipe: GeneratedRecipe
+}
+
+// Future: Accept recipe and update pantry
+export interface AcceptRecipeRequest {
+    recipe: GeneratedRecipe
+}
