@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserId, handleApiError } from '@/lib/auth'
+import { getFoodLifespan } from '@/lib/llm/gemini'
 
 // GET /api/pantry - Fetch all pantry items for the authenticated user
 export async function GET(req: NextRequest) {
@@ -44,11 +45,17 @@ export async function POST(req: NextRequest) {
             unitId,
             quantity,
             purchaseDate,
-            estimatedExpirationDate,
         } = body
 
         // Validate required fields
-        if (!fdcId || !foodName || !foodCategory || !unitId || !quantity || !purchaseDate) {
+        if (
+            !fdcId ||
+            !foodName ||
+            !foodCategory ||
+            !unitId ||
+            !quantity ||
+            !purchaseDate
+        ) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
                 { status: 400 }
@@ -75,6 +82,13 @@ export async function POST(req: NextRequest) {
 
         foodItemId = foodItem.id
 
+        let parsedPurchaseDate = new Date(purchaseDate);
+        let estimatedLifespan = await getFoodLifespan(foodName)
+        if(!estimatedLifespan) throw Error("Couldn't estimate lifespan");
+
+        let estimatedExpirationDate = new Date();
+        estimatedExpirationDate.setDate(parsedPurchaseDate.getDate() + estimatedLifespan.duration);
+
         // Create the pantry item
         const pantryItem = await prisma.userFoodItem.create({
             data: {
@@ -82,10 +96,8 @@ export async function POST(req: NextRequest) {
                 foodItemId,
                 unitId,
                 quantity: parseFloat(quantity),
-                purchaseDate: new Date(purchaseDate),
+                purchaseDate: parsedPurchaseDate,
                 estimatedExpirationDate: estimatedExpirationDate
-                    ? new Date(estimatedExpirationDate)
-                    : null,
             },
             include: {
                 foodItem: true,

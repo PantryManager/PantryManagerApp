@@ -56,7 +56,7 @@ export function AddPantryItemDialog({
     const [unitId, setUnitId] = useState('')
     const [quantity, setQuantity] = useState('1')
     const [purchaseDate, setPurchaseDate] = useState(
-        new Date().toISOString().split('T')[0]
+        new Date().toISOString()
     )
     const [submitting, setSubmitting] = useState(false)
 

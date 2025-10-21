@@ -62,6 +62,8 @@ export default function PantryPage() {
             const response = await fetch('/api/pantry')
             if (response.ok) {
                 const data = await response.json()
+                console.log('response: ', JSON.stringify(response))
+                console.log(JSON.stringify(data))
                 setPantryItems(data)
             } else {
                 console.log(JSON.stringify(response))
@@ -114,9 +116,17 @@ export default function PantryPage() {
         } else if (daysUntilExpiration <= 3) {
             return <Badge variant="destructive">Expires soon</Badge>
         } else if (daysUntilExpiration <= 7) {
-            return <Badge className="bg-yellow-500">Expires in {daysUntilExpiration} days</Badge>
+            return (
+                <Badge className="bg-yellow-500">
+                    Expires in {daysUntilExpiration} days
+                </Badge>
+            )
         } else {
-            return <Badge variant="secondary">Expires in {daysUntilExpiration} days</Badge>
+            return (
+                <Badge variant="secondary">
+                    Expires in {daysUntilExpiration} days
+                </Badge>
+            )
         }
     }
 
@@ -168,22 +178,33 @@ export default function PantryPage() {
                                         <TableCell className="font-medium">
                                             {item.foodItem.name}
                                         </TableCell>
-                                        <TableCell>{item.foodItem.category}</TableCell>
                                         <TableCell>
-                                            {item.quantity} {item.unit.shortName}
+                                            {item.foodItem.category}
                                         </TableCell>
                                         <TableCell>
-                                            {new Date(item.purchaseDate).toLocaleDateString()}
+                                            {item.quantity}{' '}
+                                            {item.unit.shortName}
                                         </TableCell>
                                         <TableCell>
-                                            {getExpirationBadge(item.estimatedExpirationDate)}
+                                            {new Date(
+                                                item.purchaseDate
+                                            ).toLocaleDateString('en-US', {
+                                                timeZone: 'UTC',
+                                            })}
+                                        </TableCell>
+                                        <TableCell>
+                                            {getExpirationBadge(
+                                                item.estimatedExpirationDate
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex gap-2">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() => handleDelete(item.id)}
+                                                    onClick={() =>
+                                                        handleDelete(item.id)
+                                                    }
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
