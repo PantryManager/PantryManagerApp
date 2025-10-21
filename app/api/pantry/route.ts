@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserId, handleApiError } from '@/lib/auth'
 import { getFoodLifespan } from '@/lib/llm/gemini'
+import type { PantryItem, CreatePantryItemRequest } from '@/types/api'
 
 // GET /api/pantry - Fetch all pantry items for the authenticated user
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         const auth = await getUserId()
         if (!auth.success) return auth.response
@@ -23,7 +24,26 @@ export async function GET(req: NextRequest) {
             ],
         })
 
-        return NextResponse.json(pantryItems)
+        const response: PantryItem[] = pantryItems.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+            purchaseDate: item.purchaseDate.toISOString(),
+            estimatedExpirationDate:
+                item.estimatedExpirationDate?.toISOString() || null,
+            foodItem: {
+                id: item.foodItem.id,
+                name: item.foodItem.name,
+                category: item.foodItem.category,
+                fdcId: item.foodItem.fdcId,
+            },
+            unit: {
+                id: item.unit.id,
+                shortName: item.unit.shortName,
+                displayName: item.unit.displayName,
+            },
+        }))
+
+        return NextResponse.json(response)
     } catch (error) {
         return handleApiError(error, 'fetching pantry items')
     }
@@ -37,7 +57,7 @@ export async function POST(req: NextRequest) {
 
         const { userId } = auth.data
 
-        const body = await req.json()
+        const body: CreatePantryItemRequest = await req.json()
         const {
             fdcId,
             foodName,
@@ -61,12 +81,9 @@ export async function POST(req: NextRequest) {
                 { status: 400 }
             )
         }
-
-        let foodItemId: string
-
         // Check if food item already exists in database
         let foodItem = await prisma.foodItem.findUnique({
-            where: { fdcId: parseInt(fdcId) },
+            where: { fdcId: fdcId },
         })
 
         // If not found, create it from FDC search result data
@@ -74,20 +91,22 @@ export async function POST(req: NextRequest) {
             foodItem = await prisma.foodItem.create({
                 data: {
                     name: foodName,
-                    fdcId: parseInt(fdcId),
+                    fdcId: fdcId,
                     category: foodCategory,
                 },
             })
         }
 
-        foodItemId = foodItem.id
+        const foodItemId = foodItem.id
 
-        let parsedPurchaseDate = new Date(purchaseDate);
-        let estimatedLifespan = await getFoodLifespan(foodName)
-        if(!estimatedLifespan) throw Error("Couldn't estimate lifespan");
+        const parsedPurchaseDate = new Date(purchaseDate)
+        const estimatedLifespan = await getFoodLifespan(foodName)
+        if (!estimatedLifespan) throw Error("Couldn't estimate lifespan")
 
-        let estimatedExpirationDate = new Date();
-        estimatedExpirationDate.setDate(parsedPurchaseDate.getDate() + estimatedLifespan.duration);
+        const estimatedExpirationDate = new Date()
+        estimatedExpirationDate.setDate(
+            parsedPurchaseDate.getDate() + estimatedLifespan.duration
+        )
 
         // Create the pantry item
         const pantryItem = await prisma.userFoodItem.create({
@@ -95,9 +114,9 @@ export async function POST(req: NextRequest) {
                 userId,
                 foodItemId,
                 unitId,
-                quantity: parseFloat(quantity),
+                quantity: parseFloat(quantity.toString()),
                 purchaseDate: parsedPurchaseDate,
-                estimatedExpirationDate: estimatedExpirationDate
+                estimatedExpirationDate: estimatedExpirationDate,
             },
             include: {
                 foodItem: true,
@@ -105,7 +124,26 @@ export async function POST(req: NextRequest) {
             },
         })
 
-        return NextResponse.json(pantryItem, { status: 201 })
+        const response: PantryItem = {
+            id: pantryItem.id,
+            quantity: pantryItem.quantity,
+            purchaseDate: pantryItem.purchaseDate.toISOString(),
+            estimatedExpirationDate:
+                pantryItem.estimatedExpirationDate?.toISOString() || null,
+            foodItem: {
+                id: pantryItem.foodItem.id,
+                name: pantryItem.foodItem.name,
+                category: pantryItem.foodItem.category,
+                fdcId: pantryItem.foodItem.fdcId,
+            },
+            unit: {
+                id: pantryItem.unit.id,
+                shortName: pantryItem.unit.shortName,
+                displayName: pantryItem.unit.displayName,
+            },
+        }
+
+        return NextResponse.json(response, { status: 201 })
     } catch (error) {
         return handleApiError(error, 'creating pantry item')
     }

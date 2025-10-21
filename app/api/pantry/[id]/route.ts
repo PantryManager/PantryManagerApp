@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserId, authorizeResourceAccess, handleApiError } from '@/lib/auth'
+import type { PantryItem, UpdatePantryItemRequest, SuccessResponse } from '@/types/api'
 
 // PATCH /api/pantry/[id] - Update a pantry item
 export async function PATCH(
@@ -13,7 +14,7 @@ export async function PATCH(
 
         const { userId } = auth.data
         const { id } = await params
-        const body = await req.json()
+        const body: UpdatePantryItemRequest = await req.json()
 
         // Verify the pantry item belongs to the user
         const authResult = await authorizeResourceAccess(
@@ -31,7 +32,7 @@ export async function PATCH(
                 ...(body.foodItemId && { foodItemId: body.foodItemId }),
                 ...(body.unitId && { unitId: body.unitId }),
                 ...(body.quantity !== undefined && {
-                    quantity: parseFloat(body.quantity),
+                    quantity: parseFloat(body.quantity.toString()),
                 }),
                 ...(body.purchaseDate && {
                     purchaseDate: new Date(body.purchaseDate),
@@ -48,7 +49,25 @@ export async function PATCH(
             },
         })
 
-        return NextResponse.json(updatedItem)
+        const response: PantryItem = {
+            id: updatedItem.id,
+            quantity: updatedItem.quantity,
+            purchaseDate: updatedItem.purchaseDate.toISOString(),
+            estimatedExpirationDate: updatedItem.estimatedExpirationDate?.toISOString() || null,
+            foodItem: {
+                id: updatedItem.foodItem.id,
+                name: updatedItem.foodItem.name,
+                category: updatedItem.foodItem.category,
+                fdcId: updatedItem.foodItem.fdcId,
+            },
+            unit: {
+                id: updatedItem.unit.id,
+                shortName: updatedItem.unit.shortName,
+                displayName: updatedItem.unit.displayName,
+            },
+        }
+
+        return NextResponse.json(response)
     } catch (error) {
         return handleApiError(error, 'updating pantry item')
     }
@@ -80,7 +99,8 @@ export async function DELETE(
             where: { id },
         })
 
-        return NextResponse.json({ success: true })
+        const response: SuccessResponse = { success: true }
+        return NextResponse.json(response)
     } catch (error) {
         return handleApiError(error, 'deleting pantry item')
     }

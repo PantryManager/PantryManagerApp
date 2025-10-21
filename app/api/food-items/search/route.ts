@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateRequest, handleApiError } from '@/lib/auth'
+import type { FoodSearchResponse } from '@/types/api'
+
+interface FdcFoodItem {
+    fdcId: number
+    description: string
+    foodCategory?: string
+    brandOwner?: string
+    dataType: string
+}
 
 // GET /api/food-items/search?q=query - Search FDC API for food items
 export async function GET(req: NextRequest) {
@@ -32,12 +41,19 @@ export async function GET(req: NextRequest) {
         fdcUrl.searchParams.set('api_key', apiKey)
         fdcUrl.searchParams.set('query', query)
         fdcUrl.searchParams.set('pageSize', '20')
-        fdcUrl.searchParams.set('dataType', 'Foundation,SR Legacy,Survey (FNDDS),Branded')
+        fdcUrl.searchParams.set(
+            'dataType',
+            'Foundation,SR Legacy,Survey (FNDDS),Branded'
+        )
 
         const response = await fetch(fdcUrl.toString())
 
         if (!response.ok) {
-            console.error('FDC API error:', response.status, response.statusText)
+            console.error(
+                'FDC API error:',
+                response.status,
+                response.statusText
+            )
             return NextResponse.json(
                 { error: 'Failed to search FDC API' },
                 { status: response.status }
@@ -46,16 +62,22 @@ export async function GET(req: NextRequest) {
 
         const data = await response.json()
 
-        // Transform FDC results to our format
-        const results = data.foods?.map((food: any) => ({
-            fdcId: food.fdcId,
-            name: food.description,
-            category: food.foodCategory || food.brandOwner || 'Uncategorized',
-            dataType: food.dataType,
-            brandOwner: food.brandOwner,
-        })) || []
+        const results =
+            data.foods?.map((food: FdcFoodItem) => ({
+                fdcId: food.fdcId,
+                name: food.description,
+                category:
+                    food.foodCategory || food.brandOwner || 'Uncategorized',
+                dataType: food.dataType,
+                brandOwner: food.brandOwner,
+            })) || []
 
-        return NextResponse.json({ results, totalHits: data.totalHits })
+        const responseData: FoodSearchResponse = {
+            results,
+            totalHits: data.totalHits,
+        }
+
+        return NextResponse.json(responseData)
     } catch (error) {
         return handleApiError(error, 'searching food items')
     }

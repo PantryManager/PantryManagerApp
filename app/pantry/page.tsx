@@ -18,27 +18,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AddPantryItemDialog } from '@/components/custom/AddPantryItemDialog'
 import { Spinner } from '@/components/ui/spinner'
-
-interface PantryItem {
-    id: string
-    quantity: number
-    purchaseDate: string
-    estimatedExpirationDate: string | null
-    foodItem: {
-        id: string
-        name: string
-        category: string
-        fdcId: number | null
-    }
-    unit: {
-        id: string
-        shortName: string
-        displayName: string
-    }
-}
+import type { PantryItem, SuccessResponse } from '@/types/api'
 
 export default function PantryPage() {
-    const { data: session, status } = useSession()
+    const { status } = useSession()
     const router = useRouter()
     const [pantryItems, setPantryItems] = useState<PantryItem[]>([])
     const [loading, setLoading] = useState(true)
@@ -61,7 +44,7 @@ export default function PantryPage() {
             setLoading(true)
             const response = await fetch('/api/pantry')
             if (response.ok) {
-                const data = await response.json()
+                const data: PantryItem[] = await response.json()
                 console.log('response: ', JSON.stringify(response))
                 console.log(JSON.stringify(data))
                 setPantryItems(data)
@@ -87,7 +70,10 @@ export default function PantryPage() {
             })
 
             if (response.ok) {
-                setPantryItems(pantryItems.filter((item) => item.id !== id))
+                const data: SuccessResponse = await response.json()
+                if (data.success) {
+                    setPantryItems(pantryItems.filter((item) => item.id !== id))
+                }
             } else {
                 console.error('Failed to delete item')
             }
