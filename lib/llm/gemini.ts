@@ -15,14 +15,22 @@ const ai = new GoogleGenAI({});
  */
 export async function getFoodLifespan(foodName: string) {
   const prompt = `
-    For the food item "${foodName}", estimate its shelf life under three conditions:
+    For the food item "${foodName}", estimate its shelf life under under the most common storage condition out of the following three:
     1. Refrigerated (fridge)
     2. Frozen (freezer)
     3. Room temperature (ambient)
 
-    Return the answer as a JSON object with the keys "fridge", "freezer", and "ambient".
-    For example: { "fridge": {"min" : 5, "max": 7, "unit": "days"}, "freezer": {"min": 6, "max": 8, "unit": "months"}, "ambient": {"min": 1, "max": 2, "unit": "days"} }.
-    The available units are "days", "weeks", "months", and "years".
+    Return the answer as a JSON object with the keys: 
+    {
+      "type": "fridge" or "freezer" or "ambient",
+      "duration": 50
+    }
+    The duration is always in days.
+    For example: { "type": "fridge", "duration": 7 }
+
+    If you are unsure about the shelf life, provide your best estimate.
+
+    Provide only the JSON object in your response, without any additional text.
   `;
 
   try {
