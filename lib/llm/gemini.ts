@@ -91,6 +91,7 @@ export async function generateRecipe(
 
     const prompt = `
     Create a delicious recipe using some or all of the following ingredients: ${ingredientList}.
+    Stapels like salt, pepper and oil can be assumed to be available.
 
     IMPORTANT: The ingredients are listed in priority order, with items expiring soonest listed first.
     Try to use as many of the early ingredients as possible.
