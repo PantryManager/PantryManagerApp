@@ -1,7 +1,7 @@
 version: 1
 applications:
-    - appRoot: apps/nextjs-app
-      frontend:
+    - frontend:
+          buildPath: '/'
           phases:
               preBuild:
                   commands:
@@ -11,7 +11,7 @@ applications:
                   commands:
                       - npm run build
           artifacts:
-              baseDirectory: apps/nextjs-app/.next
+              baseDirectory: .next
               files:
                   - '**/*'
           cache:
