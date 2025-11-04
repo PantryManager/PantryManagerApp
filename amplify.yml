@@ -14,6 +14,7 @@ frontend:
                 - env | grep -e GITHUB_ID >> .env
                 - env | grep -e GITHUB_SECRET >> .env
                 - env | grep -e NEXTAUTH_SECRET >> .env
+                - echo "NEXTAUTH_URL=https://main.$AWS_APP_ID.amplifyapp.com/api/auth" >> .env
                 - npm run build
     artifacts:
         baseDirectory: .next
