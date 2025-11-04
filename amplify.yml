@@ -1,7 +1,7 @@
 version: 1
 applications:
-    - frontend:
-          buildPath: '/' # run install and build from monorepo project root
+    - appRoot: .
+      frontend:
           phases:
               preBuild:
                   commands:
@@ -9,12 +9,12 @@ applications:
                       - npx prisma generate
               build:
                   commands:
-                      - npm run build --workspace=nextjs-app
+                      - npm run build
           artifacts:
-              baseDirectory: packages/nextjs-app/.next
+              baseDirectory: .next
               files:
                   - '**/*'
           cache:
               paths:
+                  - .next/cache/**/*
                   - node_modules/**/*
-      appRoot: packages/nextjs-app
