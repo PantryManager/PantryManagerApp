@@ -7,7 +7,13 @@ frontend:
                 - npx prisma generate
         build:
             commands:
-                - env
+                - env | grep -e DATABASE_URL >> .env
+                - env | grep -e DIRECTL_URL >> .env
+                - env | grep -e FDC_API_KEY >> .env
+                - env | grep -e GEMINI_API_KEY >> .env
+                - env | grep -e GITHUB_ID >> .env
+                - env | grep -e GITHUB_SECRET >> .env
+                - env | grep -e NEXTAUTH_SECRET >> .env
                 - npm run build
     artifacts:
         baseDirectory: .next
