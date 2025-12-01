@@ -4,9 +4,64 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Package, Calendar, AlertCircle, TrendingUp } from 'lucide-react'
 import { useSession } from 'next-auth/react'
+import { useEffect, useState } from 'react'
+import type { PantryItem } from '@/types/api'
 
 export default function Home() {
     const { data: session } = useSession()
+    const [pantryItems, setPantryItems] = useState<PantryItem[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        if (session) {
+            fetchPantryItems()
+        }
+    }, [session])
+
+    const fetchPantryItems = async () => {
+        try {
+            setLoading(true)
+            const response = await fetch('/api/pantry')
+            if (response.ok) {
+                const data: PantryItem[] = await response.json()
+                setPantryItems(data)
+            } else {
+                console.error('Failed to fetch pantry items')
+            }
+        } catch (error) {
+            console.error('Error fetching pantry items:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const getTotalItems = () => {
+        return pantryItems.length
+    }
+
+    const getExpiringSoon = () => {
+        const now = new Date()
+        const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+        return pantryItems.filter((item) => {
+            if (!item.estimatedExpirationDate) return false
+            const expirationDate = new Date(item.estimatedExpirationDate)
+            return expirationDate > now && expirationDate <= sevenDaysFromNow
+        }).length
+    }
+
+    const getExpired = () => {
+        const now = new Date()
+        return pantryItems.filter((item) => {
+            if (!item.estimatedExpirationDate) return false
+            const expirationDate = new Date(item.estimatedExpirationDate)
+            return expirationDate < now
+        }).length
+    }
+
+    const getUniqueCategories = () => {
+        const categories = new Set(pantryItems.map((item) => item.foodItem.category))
+        return categories.size
+    }
 
     return (
         <AppLayout maxWidth="lg">
@@ -30,7 +85,9 @@ export default function Home() {
                                 <Package className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">-</div>
+                                <div className="text-2xl font-bold">
+                                    {loading ? '-' : getTotalItems()}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                     In your pantry
                                 </p>
@@ -45,7 +102,9 @@ export default function Home() {
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">-</div>
+                                <div className="text-2xl font-bold">
+                                    {loading ? '-' : getExpiringSoon()}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                     Within 7 days
                                 </p>
@@ -58,7 +117,9 @@ export default function Home() {
                                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">-</div>
+                                <div className="text-2xl font-bold">
+                                    {loading ? '-' : getExpired()}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                     Need attention
                                 </p>
@@ -73,7 +134,9 @@ export default function Home() {
                                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">-</div>
+                                <div className="text-2xl font-bold">
+                                    {loading ? '-' : getUniqueCategories()}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                     Food categories
                                 </p>
