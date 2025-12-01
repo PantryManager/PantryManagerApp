@@ -142,14 +142,9 @@ export function RecipeDialog({
                     {onAcceptRecipe && (
                         <Button
                             type="button"
-                            onClick={() => {
-                                onAcceptRecipe(recipe)
-                                onOpenChange(false)
-                            }}
-                            disabled
-                            title="Coming soon: Accept recipe and update pantry"
+                            onClick={() => onAcceptRecipe(recipe)}
                         >
-                            Accept Recipe (Coming Soon)
+                            Save Recipe
                         </Button>
                     )}
                 </DialogFooter>

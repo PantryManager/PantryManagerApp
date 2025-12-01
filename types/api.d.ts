@@ -119,3 +119,37 @@ export interface GenerateRecipeResponse {
 export interface AcceptRecipeRequest {
     recipe: GeneratedRecipe
 }
+
+// ============================================
+// Saved Recipe Types
+// ============================================
+
+export interface SavedRecipeIngredient {
+    id: string
+    name: string
+    fdcId: number
+    quantityUsed: number
+    unit: string
+    userFoodItemId: string | null
+}
+
+export interface SavedRecipe {
+    id: string
+    title: string
+    description: string | null
+    servings: number | null
+    prepTime: string | null
+    cookTime: string | null
+    steps: string[]
+    createdAt: string
+    ingredients: SavedRecipeIngredient[]
+}
+
+export interface SaveRecipeRequest {
+    recipe: GeneratedRecipe
+}
+
+export interface CookRecipeResponse {
+    success: boolean
+    message?: string
+}

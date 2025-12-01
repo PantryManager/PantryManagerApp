@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { SignInButton, SignOutButton } from '@/components/custom/buttons'
 import { Button } from '@/components/ui/button'
-import { Package, Home } from 'lucide-react'
+import { Package, Home, ChefHat } from 'lucide-react'
 
 export function AppNav() {
     const { data: session } = useSession()
@@ -46,6 +46,19 @@ export function AppNav() {
                                     >
                                         <Package className="mr-2 h-4 w-4" />
                                         Pantry
+                                    </Button>
+                                </Link>
+                                <Link href="/recipes">
+                                    <Button
+                                        variant={
+                                            isActive('/recipes')
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
+                                        size="sm"
+                                    >
+                                        <ChefHat className="mr-2 h-4 w-4" />
+                                        Recipes
                                     </Button>
                                 </Link>
                             </div>

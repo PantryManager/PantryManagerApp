@@ -37,6 +37,8 @@ import type {
     GenerateRecipeResponse,
     GeneratedRecipe,
     UpdatePantryItemRequest,
+    SaveRecipeRequest,
+    SavedRecipe,
 } from '@/types/api'
 
 export default function PantryPage() {
@@ -221,10 +223,32 @@ export default function PantryPage() {
         }
     }
 
-    const handleAcceptRecipe = (recipe: GeneratedRecipe) => {
-        // TODO: Future implementation - update pantry by subtracting used ingredients
-        console.log('Recipe accepted:', recipe)
-        alert('Recipe acceptance feature coming soon!')
+    const handleAcceptRecipe = async (recipe: GeneratedRecipe) => {
+        try {
+            const requestBody: SaveRecipeRequest = { recipe }
+
+            const response = await fetch('/api/recipes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            })
+
+            if (response.ok) {
+                const savedRecipe: SavedRecipe = await response.json()
+                alert('Recipe saved successfully! You can find it in your Recipes page.')
+                setIsRecipeDialogOpen(false)
+                setGeneratedRecipe(null)
+                setSelectedItemIds(new Set())
+            } else {
+                console.error('Failed to save recipe')
+                alert('Failed to save recipe. Please try again.')
+            }
+        } catch (error) {
+            console.error('Error saving recipe:', error)
+            alert('Failed to save recipe. Please try again.')
+        }
     }
 
     const handleEditExpirationDate = (item: PantryItem) => {
