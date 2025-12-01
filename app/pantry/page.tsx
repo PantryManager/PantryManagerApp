@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ChefHat } from 'lucide-react'
+import { Plus, Trash2, ChefHat, Pencil } from 'lucide-react'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -17,6 +17,16 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { AddPantryItemDialog } from '@/components/custom/AddPantryItemDialog'
 import { RecipeDialog } from '@/components/custom/RecipeDialog'
 import { Spinner } from '@/components/ui/spinner'
@@ -26,6 +36,7 @@ import type {
     GenerateRecipeRequest,
     GenerateRecipeResponse,
     GeneratedRecipe,
+    UpdatePantryItemRequest,
 } from '@/types/api'
 
 export default function PantryPage() {
@@ -38,6 +49,9 @@ export default function PantryPage() {
     const [isRecipeDialogOpen, setIsRecipeDialogOpen] = useState(false)
     const [generatedRecipe, setGeneratedRecipe] = useState<GeneratedRecipe | null>(null)
     const [generatingRecipe, setGeneratingRecipe] = useState(false)
+    const [editingItemId, setEditingItemId] = useState<string | null>(null)
+    const [newExpirationDate, setNewExpirationDate] = useState<string>('')
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -213,6 +227,55 @@ export default function PantryPage() {
         alert('Recipe acceptance feature coming soon!')
     }
 
+    const handleEditExpirationDate = (item: PantryItem) => {
+        setEditingItemId(item.id)
+        // Convert ISO date to YYYY-MM-DD format for input[type="date"]
+        if (item.estimatedExpirationDate) {
+            const date = new Date(item.estimatedExpirationDate)
+            const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+            setNewExpirationDate(localDate.toISOString().split('T')[0])
+        } else {
+            setNewExpirationDate('')
+        }
+        setIsEditDialogOpen(true)
+    }
+
+    const handleSaveExpirationDate = async () => {
+        if (!editingItemId) return
+
+        try {
+            const requestBody: UpdatePantryItemRequest = {
+                estimatedExpirationDate: newExpirationDate || null,
+            }
+
+            const response = await fetch(`/api/pantry/${editingItemId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            })
+
+            if (response.ok) {
+                const updatedItem: PantryItem = await response.json()
+                setPantryItems(
+                    pantryItems.map((item) =>
+                        item.id === editingItemId ? updatedItem : item
+                    )
+                )
+                setIsEditDialogOpen(false)
+                setEditingItemId(null)
+                setNewExpirationDate('')
+            } else {
+                console.error('Failed to update expiration date')
+                alert('Failed to update expiration date. Please try again.')
+            }
+        } catch (error) {
+            console.error('Error updating expiration date:', error)
+            alert('Failed to update expiration date. Please try again.')
+        }
+    }
+
     const getExpirationBadge = (expirationDate: string | null) => {
         if (!expirationDate) {
             return <Badge variant="secondary">No expiration</Badge>
@@ -313,6 +376,7 @@ export default function PantryPage() {
                                     <TableHead>Quantity</TableHead>
                                     <TableHead>Purchase Date</TableHead>
                                     <TableHead>Expiration</TableHead>
+                                    <TableHead className="w-16">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -349,6 +413,16 @@ export default function PantryPage() {
                                                 item.estimatedExpirationDate
                                             )}
                                         </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleEditExpirationDate(item)}
+                                                className="h-8 w-8"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -370,6 +444,39 @@ export default function PantryPage() {
                 loading={generatingRecipe}
                 onAcceptRecipe={handleAcceptRecipe}
             />
+
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Expiration Date</DialogTitle>
+                        <DialogDescription>
+                            Update the expiration date for this item. Leave empty to remove the expiration date.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="expirationDate">Expiration Date</Label>
+                            <Input
+                                id="expirationDate"
+                                type="date"
+                                value={newExpirationDate}
+                                onChange={(e) => setNewExpirationDate(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsEditDialogOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveExpirationDate}>
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     )
 }
