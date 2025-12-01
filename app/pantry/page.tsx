@@ -94,6 +94,37 @@ export default function PantryPage() {
         }
     }
 
+    const handleBulkDelete = async () => {
+        if (selectedItemIds.size === 0) return
+
+        const itemCount = selectedItemIds.size
+        if (!confirm(`Are you sure you want to delete ${itemCount} item${itemCount > 1 ? 's' : ''}?`)) {
+            return
+        }
+
+        try {
+            const deletePromises = Array.from(selectedItemIds).map((id) =>
+                fetch(`/api/pantry/${id}`, {
+                    method: 'DELETE',
+                })
+            )
+
+            const results = await Promise.all(deletePromises)
+            const successfulDeletes = results.filter((response) => response.ok)
+
+            if (successfulDeletes.length > 0) {
+                setPantryItems(pantryItems.filter((item) => !selectedItemIds.has(item.id)))
+                setSelectedItemIds(new Set())
+            }
+
+            if (successfulDeletes.length < results.length) {
+                console.error('Some items failed to delete')
+            }
+        } catch (error) {
+            console.error('Error deleting items:', error)
+        }
+    }
+
     const handleItemAdded = (newItem: PantryItem) => {
         setPantryItems([...pantryItems, newItem])
         setIsDialogOpen(false)
@@ -230,14 +261,23 @@ export default function PantryPage() {
                     <CardTitle>My Pantry</CardTitle>
                     <div className="flex gap-2">
                         {selectedItemIds.size > 0 && (
-                            <Button
-                                onClick={handleGenerateRecipe}
-                                variant="default"
-                                disabled={generatingRecipe}
-                            >
-                                <ChefHat className="mr-2 h-4 w-4" />
-                                Generate Recipe ({selectedItemIds.size})
-                            </Button>
+                            <>
+                                <Button
+                                    onClick={handleBulkDelete}
+                                    variant="destructive"
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete Selected ({selectedItemIds.size})
+                                </Button>
+                                <Button
+                                    onClick={handleGenerateRecipe}
+                                    variant="default"
+                                    disabled={generatingRecipe}
+                                >
+                                    <ChefHat className="mr-2 h-4 w-4" />
+                                    Generate Recipe ({selectedItemIds.size})
+                                </Button>
+                            </>
                         )}
                         <Button onClick={() => setIsDialogOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
@@ -273,7 +313,6 @@ export default function PantryPage() {
                                     <TableHead>Quantity</TableHead>
                                     <TableHead>Purchase Date</TableHead>
                                     <TableHead>Expiration</TableHead>
-                                    <TableHead>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -309,19 +348,6 @@ export default function PantryPage() {
                                             {getExpirationBadge(
                                                 item.estimatedExpirationDate
                                             )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        handleDelete(item.id)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}
